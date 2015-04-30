@@ -13,28 +13,34 @@ import (
 	"time"
 )
 
+// a weather server class
+// it contains two attributes
+//  + ExeDir the execute directory of the server
+//  + server the thrift server
 type WeatherServer struct {
 	ExeDir string
 	server *thrift.TSimpleServer
 }
 
+//  create a new weather server and have it initialized
 func NewWeatherServer(exeDir string) (weatherserver *WeatherServer) {
 	weatherserver = &WeatherServer{ExeDir: exeDir}
 	weatherserver.init()
 	return weatherserver
 }
 
+// initialize the weather server and register a signal handler to handle terminate signal
 func (self *WeatherServer) init() {
 	self.registerSignalHandler()
 	log.Info("weather server has been inited")
 }
 
+//  when received the terminated signal stop the server
 func (s *WeatherServer) registerSignalHandler() {
 	go func() {
 		for {
 			c := make(chan os.Signal)
 			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-			//sig is blocked as c is 没缓冲
 			sig := <-c
 			log.Infof("Signal %d received", sig)
 			s.stop()
@@ -43,6 +49,8 @@ func (s *WeatherServer) registerSignalHandler() {
 		}
 	}()
 }
+
+// run the server
 func (s *WeatherServer) run() {
 	transportFactory := thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory())
 	protocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
@@ -62,6 +70,7 @@ func (s *WeatherServer) run() {
 	}
 }
 
+// stop the server
 func (s *WeatherServer) stop() {
 	log.Info("Weather server is about to stop...")
 	s.server.Stop()
